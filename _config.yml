@@ -3,13 +3,14 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
+title: 李凯的博客
+subtitle: 长期有耐心
 description: ''
 keywords:
-author: John Doe
-language: en
+author: 李凯
+language: zh-CN
 timezone: ''
+email: leekainpu@outlook.com
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
@@ -93,7 +94,14 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: next
+
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
+  content: true
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
