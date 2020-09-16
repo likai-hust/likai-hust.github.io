@@ -10,11 +10,11 @@ categories:
 > 该文简述CodeReview该如何做，以及review什么内容，该文章重点是checklist部分，基本上每条check项背后都是一个Bug或者线上case（血泪史......）。
 
 # 如何做CodeReview
-
-- 代码规范：目前组内的规范是阿里Java编码规范（01-JAVA编码规范），每个人必须至少阅读一遍，并安装Idea插件。
+![](/images/code_review.png)
+- 代码规范：目前组内的规范是阿里Java编码规范[阿里巴巴Java编码规范](https://github.com/alibaba/p3c)，每个人必须至少阅读一遍，并安装IDEA插件，确保review前认知对齐。
 - Review指南：即本文档。
-- 总结优化：定期总结CodeReview过程及结果，并对一些点进行优化，对于文档缺失的部分进行持续更新。
-- 激励机制：年度CodeReview评论最多者200元美团卡。
+- 总结优化：定期总结CodeReview过程及结果，并对一些点进行优化，对于文档缺失的部分进行持续更新，持续提升Review质量。
+- 激励机制：年度CodeReview评论最多者200元美团卡，提升CodeReview参与者的动力。
 <!--more-->
 
 ## review时间
