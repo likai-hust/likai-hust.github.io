@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://likai-hust.github.io').hostname,
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="本文介绍的是Java里一个内建的概念，Finalizer。你可能对它对数家珍，但也可能从未听闻过，这得看你有没有花时间完整地看过一遍java.lang.Object类了。在java.lang.Object里面就有一个finalize()的方法。这个方法的实现是空的，不过一旦实现了这个方法，就会触发JVM的内部行为，威力和危险并存。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【翻译】通过调试来理解Finalizer">
+<meta property="og:url" content="https://likai-hust.github.io/2019/12/30/java-Finalizer/index.html">
+<meta property="og:site_name" content="李凯的博客">
+<meta property="og:description" content="本文介绍的是Java里一个内建的概念，Finalizer。你可能对它对数家珍，但也可能从未听闻过，这得看你有没有花时间完整地看过一遍java.lang.Object类了。在java.lang.Object里面就有一个finalize()的方法。这个方法的实现是空的，不过一旦实现了这个方法，就会触发JVM的内部行为，威力和危险并存。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://likai-hust.github.io/images/java-memory-model.png">
+<meta property="article:published_time" content="2019-12-30T05:58:22.000Z">
+<meta property="article:modified_time" content="2020-09-06T11:25:36.173Z">
+<meta property="article:author" content="李凯">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Finalizer">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://likai-hust.github.io/images/java-memory-model.png">
+
+<link rel="canonical" href="https://likai-hust.github.io/2019/12/30/java-Finalizer/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>【翻译】通过调试来理解Finalizer | 李凯的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">李凯的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">长期有耐心</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://likai-hust.github.io/2019/12/30/java-Finalizer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="李凯">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李凯的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【翻译】通过调试来理解Finalizer
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-30 13:58:22" itemprop="dateCreated datePublished" datetime="2019-12-30T13:58:22+08:00">2019-12-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-09-06 19:25:36" itemprop="dateModified" datetime="2020-09-06T19:25:36+08:00">2020-09-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index">
+                    <span itemprop="name">语言基础</span>
+                  </a>
+                </span>
+            </span>
+
+          
+            <span id="/2019/12/30/java-Finalizer/" class="post-meta-item leancloud_visitors" data-flag-title="【翻译】通过调试来理解Finalizer" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2019/12/30/java-Finalizer/#comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2019/12/30/java-Finalizer/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文介绍的是Java里一个内建的概念，Finalizer。你可能对它对数家珍，但也可能从未听闻过，这得看你有没有花时间完整地看过一遍java.lang.Object类了。在java.lang.Object里面就有一个finalize()的方法。这个方法的实现是空的，不过一旦实现了这个方法，就会触发JVM的内部行为，威力和危险并存。</p>
+<a id="more"></a>
+<p>如果JVM发现某个类实现了finalize()方法的话，那么见证奇迹的时刻到了。我们先来创建一个实现了这个非凡的finalize()方法的类，然后看下这种情况下JVM的处理会有什么不同。我们先从一个简单的示例程序开始：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.concurrent.atomic.AtomicInteger;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Finalizable</span> </span>&#123;</span><br><span class="line">      <span class="keyword">static</span> AtomicInteger aliveCount = <span class="keyword">new</span> AtomicInteger(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">      Finalizable() &#123;</span><br><span class="line">            aliveCount.incrementAndGet();</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="meta">@Override</span></span><br><span class="line">     <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">                  Finalizable.aliveCount.decrementAndGet();</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;; i++) &#123;</span><br><span class="line">                  Finalizable f = <span class="keyword">new</span> Finalizable();</span><br><span class="line">                  <span class="keyword">if</span> ((i % <span class="number">100_000</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">                        System.out.format(<span class="string">"After creating %d objects, %d are still alive.%n"</span>, <span class="keyword">new</span> Object[] &#123;i, Finalizable.aliveCount.get() &#125;);</span><br><span class="line">                    &#125;</span><br><span class="line">          &#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个程序使用了一个无限循环来创建对象。它同时还用了一个静态变量aliveCount来跟踪一共创建了多少个实例。每创建了一个新对象，计数器会加1，一旦GC完成后调用了finalize()方法，计数器会跟着减1。</p>
+<p>你觉得这小段代码的输出结果会是怎样的呢？由于新创建的对象很快就没人引用了，它们马上就可以被GC回收掉。因此你可能会认为这段程序可以不停的运行下去，：</p>
+<blockquote>
+<p>After creating 345,000,000 objects, 0 are still alive.<br>After creating 345,100,000 objects, 0 are still alive.<br>After creating 345,200,000 objects, 0 are still alive.<br>After creating 345,300,000 objects, 0 are still alive.</p>
+</blockquote>
+<p>显然结果并非如此。现实的结果完全不同，在我的Mac OS X的JDK 1.7.0_51上，程序大概在创建了120万个对象后就抛出java.lang.OutOfMemoryError: GC overhead limitt exceeded异常退出了。</p>
+<blockquote>
+<p>After creating 900,000 objects, 791,361 are still alive.<br>After creating 1,000,000 objects, 875,624 are still alive.<br>After creating 1,100,000 objects, 959,024 are still alive.<br>After creating 1,200,000 objects, 1,040,909 are still alive.<br>Exception in thread “main” java.lang.OutOfMemoryError: GC overhead limit exceeded<br>at java.lang.ref.Finalizer.register(Finalizer.java:90)<br>at java.lang.Object.(Object.java:37)<br>at eu.plumbr.demo.Finalizable.(Finalizable.java:8)<br>at eu.plumbr.demo.Finalizable.main(Finalizable.java:19)</p>
+</blockquote>
+<h2 id="垃圾回收的行为"><a href="#垃圾回收的行为" class="headerlink" title="垃圾回收的行为"></a>垃圾回收的行为</h2><p>想弄清楚到底发生了什么，你得看下这段程序在运行时的状况如何。我们来打开-XX:+PrintGCDetails选项再运行一次看看：</p>
+<blockquote>
+<p>[GC [PSYoungGen: 16896K-&gt;2544K(19456K)] 16896K-&gt;16832K(62976K), 0.0857640 secs] [Times: user=0.22 sys=0.02, real=0.09 secs]<br>[GC [PSYoungGen: 19440K-&gt;2560K(19456K)] 33728K-&gt;31392K(62976K), 0.0489700 secs] [Times: user=0.14 sys=0.01, real=0.05 secs]<br>[GC– [PSYoungGen: 19456K-&gt;19456K(19456K)] 48288K-&gt;62976K(62976K), 0.0601190 secs] [Times: user=0.16 sys=0.01, real=0.06 secs]<br>[Full GC [PSYoungGen: 16896K-&gt;14845K(19456K)] [ParOldGen: 43182K-&gt;43363K(43520K)] 60078K-&gt;58209K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.4954480 secs] [Times: user=1.76 sys=0.01, real=0.50 secs]<br>[Full GC [PSYoungGen: 16896K-&gt;16820K(19456K)] [ParOldGen: 43361K-&gt;43361K(43520K)] 60257K-&gt;60181K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.1379550 secs] [Times: user=0.47 sys=0.01, real=0.14 secs]<br>— cut for brevity—<br>[Full GC [PSYoungGen: 16896K-&gt;16893K(19456K)] [ParOldGen: 43351K-&gt;43351K(43520K)] 60247K-&gt;60244K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.1231240 secs] [Times: user=0.45 sys=0.00, real=0.13 secs]<br>[Full GCException in thread “main” java.lang.OutOfMemoryError: GC overhead limit exceeded<br>[PSYoungGen: 16896K-&gt;16866K(19456K)] [ParOldGen: 43351K-&gt;43351K(43520K)] 60247K-&gt;60218K(62976K) [PSPermGen: 2591K-&gt;2591K(21504K)], 0.1301790 secs] [Times: user=0.44 sys=0.00, real=0.13 secs]<br>at eu.plumbr.demo.Finalizable.main(Finalizable.java:19)</p>
+</blockquote>
+<p>从日志中可以看到，少数几次的Eden区的新生代GC过后，JVM开始采用更昂贵的Full GC来清理老生代和持久代的空间。为什么会这样？既然已经没有人引用这些对象了，为什么它们没有在新生代中被回收掉？代码这么写有什么问题吗？</p>
+<p>要弄清楚GC这个行为的原因，我们先来对代码做一个小的改动，将finalize()方法的实现先去掉。现在JVM发现这个类没有实现finalize()方法了，于是它切换回了”正常”的模式。再看一眼GC的日志，你只能看到一些廉价的新生代GC在不停的运行。</p>
+<p><img src="/images/java-memory-model.png" alt="Java内存"></p>
+<p>因为修改后的这段程序中，的确没有人引用到了新生代的这些刚创建的对象。因此Eden区很快就被清空掉了，整个程序可以一直的执行下去。</p>
+<p>另一方面，在早先的那个例子中情况则有些不同。这些对象并非没人引用 ，JVM会为每一个Finalizable对象创建一个看门狗（watchdog）。这是Finalizer类的一个实例。而所有的这些看门狗又会为Finalizer类所引用。由于存在这么一个引用链，因此整个的这些对象都是存活的。</p>
+<p>那现在Eden区已经满了，而所有对象又都存在引用，GC没辙了只能把它们全拷贝到Suvivor区。更糟糕的是，一旦连Survivor区也满了，只能存到老生代里面了。你应该还记得，Eden区使用的是一种”抛弃一切”的清理策略，而老生代的GC则完全不同，它采用的是一种开销更大的方式。</p>
+<h2 id="Finalizer队列"><a href="#Finalizer队列" class="headerlink" title="Finalizer队列"></a>Finalizer队列</h2><p>只有在GC完成后，JVM才会意识到除了Finalizer对象已经没有人引用到我们创建的这些实例了，因此它才会把指向这些对象的Finalizer对象标记成可处理的。GC内部会把这些Finalizer对象放到java.lang.ref.Finalizer.ReferenceQueue这个特殊的队列里面。</p>
+<p>完成了这些麻烦事之后，我们的应用程序才能继续往下走。这里有个线程你一定会很感兴趣——Finalizer守护线程。通过使用jstack进行thread dump可以看到这个线程的信息。</p>
+<blockquote>
+<p>My Precious:~ demo$ jps<br>1703 Jps<br>1702 Finalizable<br>My Precious:~ demo$ jstack 1702</p>
+</blockquote>
+<blockquote>
+<p>— cut for brevity —<br>“Finalizer” daemon prio=5 tid=0x00007fe33b029000 nid=0x3103 runnable [0x0000000111fd4000]<br>   java.lang.Thread.State: RUNNABLE<br>at java.lang.ref.Finalizer.invokeFinalizeMethod(Native Method)<br>at java.lang.ref.Finalizer.runFinalizer(Finalizer.java:101)<br>at java.lang.ref.Finalizer.access$100(Finalizer.java:32)<br>at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:190)<br>— cut for brevity —</p>
+</blockquote>
+<p>从上面可以看到有一个Finalizer守护线程正在运行。Finalizer线程是个单一职责的线程。这个线程会不停的循环等待java.lang.ref.Finalizer.ReferenceQueue中的新增对象。一旦Finalizer线程发现队列中出现了新的对象，它会弹出该对象，调用它的finalize()方法，将该引用从Finalizer类中移除，因此下次GC再执行的时候，这个Finalizer实例以及它引用的那个对象就可以回垃圾回收掉了。</p>
+<p>现在我们有两个线程都在不停地循环。我们的主线程在忙着创建新对象。这些对象都有各自的看门狗也就是Finalizer，而这个Finalizer对象会被添加到一个java.lang.ref.Finalizer.ReferenceQueue中。Finalizer线程会负责处理这个队列，它将所有的对象弹出，然后调用它们的finalize()方法。</p>
+<p>很多时候你可能磁不到内存溢出这种情况。finalize()方法的调用会比你创建新对象要早得多。因此大多数时候，Finalizer线程能够赶在下次GC带来更多的Finalizer对象前清空这个队列。但我们这个例子当中，显然不是这样。</p>
+<p>为什么会出现溢出？因为Finalizer线程和主线程相比它的优先级要低。这意味着分配给它的CPU时间更少，因此它的处理速度没法赶上新对象创建的速度。这就是问题的根源——对象创建的速度要比Finalizer线程调用finalize()结束它们的速度要快，这导致最后堆中所有可用的空间都被耗尽了。结果就是——我们亲爱的小伙伴java.lang.OutOfMemoryError会以不同的身份出现在你面前。</p>
+<p>如果你仍然不相信我的话，dump一下堆内存，看下它里面有什么。比如说，你可以使用-XX:+HeapDumpOnOutOfMemoryError参数启动我们这个小程序，在我的Eclipse中的MAT Dominator Tree中我看到的是下面这张图：</p>
+<p>看到了吧，我这个64M的堆全给Finalizer对象给占满了。</p>
+<p>结论<br>回顾一下，Finalizable对象的生命周期和普通对象的行为是完全不同的，列举如下：</p>
+<ul>
+<li>JVM创建Finalizable对象</li>
+<li>JVM创建 java.lang.ref.Finalizer实例，指向刚创建的对象。</li>
+<li>java.lang.ref.Finalizer类持有新创建的java.lang.ref.Finalizer的实例。这使得下一次新生代GC无法回收这些对象。</li>
+<li>新生代GC无法清空Eden区，因此会将这些对象移到Survivor区或者老生代。</li>
+<li>垃圾回收器发现这些对象实现了finalize()方法。因为会把它们添加到java.lang.ref.Finalizer.ReferenceQueue队列中。</li>
+<li>Finalizer线程会处理这个队列，将里面的对象逐个弹出，并调用它们的finalize()方法。<br>finalize()方法调用完后，Finalizer线程会将引用从Finalizer类中去掉，因此在下一轮GC中，这些对象就可以被回收了。</li>
+<li>Finalizer线程会和我们的主线程进行竞争，不过由于它的优先级较低，获取到的CPU时间较少，因此它永远也赶不上主线程的步伐。</li>
+<li>程序消耗了所有的可用资源，最后抛出OutOfMemoryError异常。</li>
+</ul>
+<p>这篇文章想告诉我们什么？下回如果你考虑使用finalize()方法，而不是使用常规的方式来清理对象的话，最好多想一下。你可能会为使用了finalize()方法写出的整洁的代码而沾沾自喜，但是不停增长的Finalizer队列也许会撑爆你的年老代，你需要重新再考虑一下你的方案。</p>
+<p>参考：</p>
+<ol>
+<li><a href="https://dzone.com/articles/debugging-understand-finalizer" target="_blank" rel="noopener">Debugging to Understand Finalizer
+</a></li>
+<li><a href="https://www.cnblogs.com/benwu/articles/5812903.html" target="_blank" rel="noopener">Java的Finalizer引发的内存溢出</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Finalizer/" rel="tag"># Finalizer</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/01/01/2020%EF%BC%9A%E5%9B%9E%E9%A1%BE%E4%B8%8E%E8%A7%84%E5%88%92/" rel="next" title="2020：回顾与规划">
+      2020：回顾与规划 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾回收的行为"><span class="nav-number">1.</span> <span class="nav-text">垃圾回收的行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Finalizer队列"><span class="nav-number">2.</span> <span class="nav-text">Finalizer队列</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李凯"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">李凯</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/likai-hust" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;likai-hust" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/leekainpu" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;leekainpu" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leekainpu@outlook.com" title="E-Mail → mailto:leekainpu@outlook.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李凯</span>
+</div>
+  <div class="theme-info">主题 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el: '#valine-comments',
+      verify: false,
+      notify: false,
+      appId: 'pqxDinpppYfNGtOALGzNl6VO-gzGzoHsz',
+      appKey: 'jUQL56tfoxsyIOWGCGPzAzSQ',
+      placeholder: "Just go go",
+      avatar: 'mm',
+      meta: guest,
+      pageSize: '10' || 10,
+      visitor: true,
+      lang: 'zh-cn' || 'zh-cn',
+      path: location.pathname,
+      recordIP: false,
+      serverURLs: ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

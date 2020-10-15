@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>软件架构模式总览</title>
+    <url>/2020/10/10/%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%BC%8F%E6%80%BB%E8%A7%88/</url>
+    <content><![CDATA[<h2 id="软件架构"><a href="#软件架构" class="headerlink" title="软件架构"></a>软件架构</h2><h2 id="常见架构模式"><a href="#常见架构模式" class="headerlink" title="常见架构模式"></a>常见架构模式</h2><h3 id="微内核架构"><a href="#微内核架构" class="headerlink" title="微内核架构"></a>微内核架构</h3><h3 id="分层架构"><a href="#分层架构" class="headerlink" title="分层架构"></a>分层架构</h3><h3 id="微服务架构"><a href="#微服务架构" class="headerlink" title="微服务架构"></a>微服务架构</h3><h3 id="基于事件架构"><a href="#基于事件架构" class="headerlink" title="基于事件架构"></a>基于事件架构</h3><h3 id="MVC架构"><a href="#MVC架构" class="headerlink" title="MVC架构"></a>MVC架构</h3>]]></content>
+      <categories>
+        <category>架构/设计</category>
+      </categories>
+      <tags>
+        <tag>架构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>分享小组的一份codereview checklist</title>
+    <url>/2020/09/16/checklist/</url>
+    <content><![CDATA[<blockquote>
+<p>该文简述CodeReview该如何做，以及review什么内容，该文章重点是checklist部分，基本上每条check项背后都是一个Bug或者线上case（血泪史……）。</p>
+</blockquote>
+<h1 id="如何做CodeReview"><a href="#如何做CodeReview" class="headerlink" title="如何做CodeReview"></a>如何做CodeReview</h1><p><img src="/images/code_review.png" alt=""></p>
+<ul>
+<li>代码规范：目前组内的规范是阿里Java编码规范<a href="https://github.com/alibaba/p3c" target="_blank" rel="noopener">阿里巴巴Java编码规范</a>，每个人必须至少阅读一遍，并安装IDEA插件，确保review前认知对齐。</li>
+<li>Review指南：即本文档。</li>
+<li>总结优化：定期总结CodeReview过程及结果，并对一些点进行优化，对于文档缺失的部分进行持续更新，持续提升Review质量。</li>
+<li>激励机制：年度CodeReview评论最多者200元美团卡，提升CodeReview参与者的动力。<a id="more"></a>
+
+</li>
+</ul>
+<h2 id="review时间"><a href="#review时间" class="headerlink" title="review时间"></a>review时间</h2><p>一轮测试完成之前完成Review</p>
+<h2 id="Review过程"><a href="#Review过程" class="headerlink" title="Review过程"></a>Review过程</h2><ul>
+<li>单次查看代码不多于500行</li>
+<li>单次审查建议不要超过30分钟</li>
+</ul>
+<h1 id="CodeReview-Checklist"><a href="#CodeReview-Checklist" class="headerlink" title="CodeReview Checklist"></a>CodeReview Checklist</h1><h2 id="Bug检查"><a href="#Bug检查" class="headerlink" title="Bug检查"></a>Bug检查</h2><h3 id="编码问题"><a href="#编码问题" class="headerlink" title="编码问题"></a>编码问题</h3><ul>
+<li>检查包装类型拆包空指针：例如—基本类型与包装类型比较、包装类型赋值给基本类型）</li>
+<li>检查引用对象为null触发空指针：例如—A.getData().getX()</li>
+<li>并发集合key、value为null触发空指针（ConcurrentHashMap）</li>
+<li>if判断逻辑正确性检查（!符号等的运用是否写反）</li>
+<li>对象相等比较是否使用正确（包装类型须使用Objects.equals、枚举类型须使用==）</li>
+</ul>
+<h3 id="安全问题"><a href="#安全问题" class="headerlink" title="安全问题"></a>安全问题</h3><ul>
+<li>常量集合是否被程序修改？一般集合是否被多线程并发修改。</li>
+<li>ThreadLocal使用结束后是否正确清理。</li>
+<li>线程池的线程数设置是否经过详细的思考，具体如何得出的。</li>
+<li>检查是否存在死循环、无限递归可能。</li>
+<li>金额相关字段在涉及到元转分/分转元的时候，转换方法是否正确，是否存在精度问题。</li>
+<li>是否存在敏感日志未进行脱敏处理。</li>
+</ul>
+<h3 id="兼容性问题"><a href="#兼容性问题" class="headerlink" title="兼容性问题"></a>兼容性问题</h3><ul>
+<li>Thrift新增字段必须为Optional</li>
+<li>Thrift IDL禁止调整已有字段编号、顺序</li>
+<li>Thrift map结构是否存在null value或null key（序列怀会触发空指针异常）</li>
+<li>多系统是否存在上线顺序依赖（兼容性问题，建议系统间不相互依赖）</li>
+<li>Thrift枚举必须手动设置，且尽量不要调整枚举的顺序（Thrift枚举序列化依赖枚举值，未设值得枚举若调整了顺序，则会发生序列化和反序列化错乱问题）</li>
+<li>maven引入新包是否存在包冲突问题</li>
+</ul>
+<h3 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h3><ul>
+<li>异常日志处理是否正确？是否会触发大量error误告警？是否会影响程序性能？</li>
+<li>新增下游的强弱依赖是否处理正确？弱依赖是否阻塞流程？</li>
+<li>Json反序列化是否考虑格式异常/兼容，触发序列化抛异常问题。</li>
+<li>字符串转Number是否考虑参数异常，触发NumberFormat异常问题？</li>
+<li>引用工具抛出的异常是否有检查，是否被正确处理。</li>
+<li>对Adapter层的异常捕获是否仅是TException。</li>
+</ul>
+<h3 id="新增RPC检查"><a href="#新增RPC检查" class="headerlink" title="新增RPC检查"></a>新增RPC检查</h3><ul>
+<li>新增下游是否可降级？降级处理是否正确。</li>
+<li>下游超时设置是否合理。</li>
+<li>高QPS情况下下游是否有压测？压测是否符合预期。</li>
+<li>新增Thrift接口是否接入鉴权。</li>
+</ul>
+<h2 id="非功能要求"><a href="#非功能要求" class="headerlink" title="非功能要求"></a>非功能要求</h2><ul>
+<li>工具：新增代码中是否有修改/新增 Util工具类，禁止造轮子行为，统一收敛到Adam（业务无关），Common SDK（业务相关）中，形成复用和沉淀；</li>
+<li>命名：方法、类、变量命名是否具备可阅读性。</li>
+<li>注释：变量、方法、类注释是否有，是否清晰？</li>
+<li>常量定义：检查代码中魔法值、硬编码，检查是否需要定义常量或者动态配置。</li>
+<li>代码设计：<ul>
+<li>重复方法检查。</li>
+<li>多重循环嵌套、多重if嵌套（一般不要超过3层）。</li>
+<li>是否存在大函数、大类？</li>
+</ul>
+</li>
+<li>单测：<ul>
+<li>单元测试是否完整。</li>
+<li>单测是否有断言，断言是否合理。</li>
+</ul>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>其他</category>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>code review</tag>
+        <tag>规范</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>解析「三户模型」及建立账户模型</title>
+    <url>/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/</url>
+    <content><![CDATA[<blockquote>
+<p><strong>转载声明</strong>：本文转自个人博客「凤凰牌老熊」，<a href="http://blog.lixf.cn/essay/2017/06/12/account-1/" target="_blank" rel="noopener">三户模型</a>。</p>
+</blockquote>
+<p>　　账户体系是支付系统的基础，它的设计直接影响整个系统的特性。这里探讨如何针对电子商务系统的账户体系设计。我们从一些基本概念开始入手，了解怎么建模。</p>
+<h1 id="1-三户模型"><a href="#1-三户模型" class="headerlink" title="1 三户模型"></a>1 三户模型</h1><p>　　三户模型最早是在增强型电信运营图（Enhanced Telecom Operations Map，eTOM）中提出，在电信行业中得到广泛使用。 三户指客户（Customer）、用户（User）和账户(Account)。eTOM 引入是电信行业营销模型转向“以客户为中心”的理念而产生的成果。围绕客户建立用户和账户，这三个是相互关联的实体。近年来，金融行业也逐步接受和采用了三户模型。</p>
+<a id="more"></a>
+
+<ul>
+<li><strong>客户</strong>，指自然人或者法人。法人一般被称之为企业客户。如无特指，一般客户指个人客户。</li>
+<li><strong>用户</strong>，指通过注册的方式进入系统，使用系统提供的服务的实体，也称为登录账户，即用户在系统中登录凭证和个人信息。对应的，法人客户在系统中注册后，被称之为商户。</li>
+<li><strong>账户</strong>，这里特指支付账户，指用户在支付系统中用于交易的资金所有者权益的凭证。</li>
+</ul>
+<h1 id="2-客户"><a href="#2-客户" class="headerlink" title="2 客户"></a>2 客户</h1><h2 id="2-1-个人客户"><a href="#2-1-个人客户" class="headerlink" title="2.1 个人客户"></a>2.1 个人客户</h2><p>　　在银行体系中，一般是先有客户，再有用户。早期个人客户通过柜台人员操作注册到银行体系中，柜台人员在处理时，先添加客户信息，再注册账户信息。而在互联网系统中， 一般是用户先注册，先有用户，然后补充客户身份信息。也就是客户身份信息是在运行过程中逐步完善的。在银行柜台，操作人员通过面签或实名方式在系统中建立客户对象。这个对象的业务主键是证件号（如，身份证，假设目前 18 位证件都不重号），所有相同证件我们都视为同一个客户，不论是不是同一个系统中。同一个证件号，不论在工行还是中行，开出来的客户，其实都对应着现实中的同一个人。</p>
+<p>　　在一个平台体系中，通过系统给客户分配的唯一 ID 号客户 ID 来标识客户对像。这里面就有一个关键业务，既然相同证件都会识别成一个客户，那么当相同的证件号进入系统时，系统是如何处理的？当然是合成一个了，这个过程叫做客户归并，即：<strong>将相同证件的客户合成同一个客户号的过程，我们称为归并</strong>。归并是有风险的，所以需要一些鉴权手段来处理。在互联网应用中，一个系统中客户的生命周期如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815160637384" alt="lifecycle"></p>
+<p>注意在这个流程中没有销户的状态。这是为了支持历史业务的处理，客户一般不做销户。此外这个流程和支付账户的流程比较类似，这是为了方便在客户层面做账户控制。以司法协查为例，某个客户被协查以致账户冻结，需要冻结该客户下所有资金账户，这些账户都被止付。</p>
+<h2 id="2-2-企业客户"><a href="#2-2-企业客户" class="headerlink" title="2.2 企业客户"></a>2.2 企业客户</h2><p>　　企业客户相对个人客户来说比较复杂点，但三户模型仍然适用。同个人客户一样，企业客户在银行或支付平台开设资金账户，资金账户归属于此客户。企业客户是一个组织，其账户必然是组织授权内部人员去操作。但是这个操作人，同个人客户一样，只是系统的使用者，即用户。企业的资金比较大，并且有严格的业务流程，所以在系统使用上，一般是多个用户操作一个或多个资金账户。这种关系本身来说，也是一种授权关系，企业授权相应的用户来操作特定的资金账户，只不过为了管理方便，可以引入角色管理机制来实现。对于支付公司来说，企业客户通常都是发展商户过程中产生的。企业客户的识别同个人客户识别也是一样的，通过企业证件来统一识别。相同的企业证件号归并到同一个企业客户下面。建立企业客户的好处在于：</p>
+<ul>
+<li>有些企业本身只开通了企业服务业务，而不开通商户服务；</li>
+<li>一个企业可以开通多个商户，企业客户是这些多个商户的统计口径。</li>
+</ul>
+<h2 id="2-3-客户模型"><a href="#2-3-客户模型" class="headerlink" title="2.3 客户模型"></a>2.3 客户模型</h2><p>　　对客户的处理，在银行系统中是 CIF 系统或 ECIF 系统，而在互联网模式下，很多都是基于微服务的体系，如何划分微服务，这块要从客户系统对提供的业务主题来分。比如：对于个人客户，客户识别就是一个服务主题，对于一个客户有多种多样的识别方式，除了证件外，还包括生物识别，比如画像、指纹等。</p>
+<ul>
+<li>基本信息也是一个服务主题：包括客户的最基本的信息，姓名、年令、职业等;</li>
+<li>管理信息也是一个服务主题：比如这个客户的评级、是否集团员工等；</li>
+<li>客户标签也是一个服务主题：所谓标签，就是从不同的维度来给客户做个标记，一个客户有多个标签，当然，前提是要对标签做好规划；</li>
+<li>协议管理也是客户的一个服务主题：这里面有授权协议、委托协议等。</li>
+</ul>
+<p>当然，客户还有其它的一些主题，这个要看公司的业务了。</p>
+<p><img src="http://img.blog.csdn.net/20170815161913904" alt="cc"><br><img src="http://img.blog.csdn.net/20170815172552682" alt="ccc"></p>
+<h1 id="3-用户和商户"><a href="#3-用户和商户" class="headerlink" title="3 用户和商户"></a>3 用户和商户</h1><h2 id="3-1-用户"><a href="#3-1-用户" class="headerlink" title="3.1 用户"></a>3.1 用户</h2><p>　　用户是账户的操作实体，它是由客户来注册到系统中来的。虽然用户通过客户间接的拥有了资金账户，但这种关系并不是绝对的，比如，一个用户可以授权另一个用户进行账户的余额查询。所以，用户与资金账户之间我们可以抽象出一种授权关系，凡是授权用户，都可以操作资金账户，当然，这种授权包括客户自己的用户。用户的建立比较简单，一般自助注册后就可以生成用户实体了。用户的生命周期如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815163116456" alt="user"></p>
+<p>　　如果用户通过简易注册方式生成，这种情况下生成的是个预开户状态的用户，用户需要进一步完善一些信息才能变成正常用户，比如有些平台，在用户第一次登录时要求设置密保问题及答案。如果用户采用标准注册方式注册 的，可以直接成正常状态用户，正常做业务了。</p>
+<p>　　如果用户想要销户，收到销户申请后，不能直接销户，前面我们说过了，客户是通过用户来进行资金账户的管理与操作的，没有用户，资金账户就有可能没法玩了（假设客户只授权自己的一个而且只有一个用户来操作资金账户），特别是一些账户还存在债务。所以，此时有个确认过程，要求各业务系统确认此用户下的所有账户是否可以销户，如果没有问题，先销资金账户，当用户下的所有资金账户都销户完毕，再销用户，用户销户完成后，会释放出此用户占用的资源，如注册手机号。</p>
+<p>　　用户除了生命周期状态外，还有一个管理状态，比如冻结，从现实模型中来说，这个是不应该放在用户层面的而是放在资金账户层面上的，但互联网模式下，一个用户有多个资金账户，为了用户体验，把这些放在了用户层面上了，就如同支付密码放在用户层面上一样。</p>
+<h2 id="3-2-商户"><a href="#3-2-商户" class="headerlink" title="3.2 商户"></a>3.2 商户</h2><p>　　商户是企业客户的一个业务影子，或是看成资金账户分组的一个手段。商户是客户一个外围业务，如果把它看成用户平级层面也是可以的，即：此商户所有业务产生的资金进入到一个分类资金账户里。不论怎么说，一个企业不论开多少个商户，每个商户又开通多少个资金账户，都改变不了资金账户的归属关系，它是现实客户这个实体的。对客户的处理，在银行系统中是 CIF 系统或 ECIF 系统，而在互联网模式下，很多都是基于微服务的体系，如何划分微服务，这块要从客户系统对提供的业务主题来分。</p>
+<h1 id="4-账户"><a href="#4-账户" class="headerlink" title="4 账户"></a>4 账户</h1><h2 id="4-1-基本概念"><a href="#4-1-基本概念" class="headerlink" title="4.1 基本概念"></a>4.1 基本概念</h2><p>　　账户设置，一般是从交易开始的。交易的实现必须有账户的支持，账户是交易的基本构成元素。从支付系统的角度，交易中涉及到的资金流是资金从一个账户流向另一个账户。发起交易的一方，被称之为交易主体，他可以是个人，也可以是一个机构。资金从该主体所拥有的账户中流出。而接收交易的一方，被称为交易对手，他也可以是个人，或者机构。和第三方支付或者金融机构的交易不同，电商系统中，交易还会涉及到渠道。由于电商系统本身并无清结算的资质，所有资金从交易主体到交易对手的账户的流动，在大部分情况下，并没有经过电商系统，而是由电商系统调用支付渠道提供的接口，由它来完成真正的支付过程。当然，渠道也不是活雷锋，在这个过程中，渠道要收取费用。所以，在电商系统中，一次交易会涉及到三个账户： 交易主体账户、交易对手账户以及支付渠道账户。</p>
+<p><strong>支付账户和登录账户</strong></p>
+<p>　　账户体系设计首先要区分两个概念，支付账户和登录账户。这是两个不同业务领域的概念。<strong>支付账户</strong>指用户在支付系统中用于交易的资金所有者权益的凭证。<strong>登录账号</strong>指用户在系统中的登录的凭证和个人信息。一个用户可以有多个登录账户，一个登录账户可以有多个支付账户，比如零钱账户，储值卡账户等。 一般来说，支付账户不会在多个登录账户之间共用。如果没有特殊说明，下文中的账户，都默认指支付账户。</p>
+<p><strong>会计科目与账户</strong></p>
+<p>　　公司的会计需要对每一笔交易都要做详细的记录，即记账。公司每天都产生大量的交易行为，为了便于管理和统计，一个简单的方法是对交易进行分类，比如食品、带宽、办公用品等等。这个分类，按照公司的规模和业务复杂度，可以有一级、二级、三级或者更多级的结构，这被称之为<strong>会计科目</strong>。记账时，除了交易明细，还需要在每个级别上对交易额进行汇总。 一般来说，一级科目上汇总称为<strong>总帐科目</strong>，而详细记录称为<strong>明细科目</strong>。在电商系统中，由于涉及到的参与方较多，记账也相对复杂，但基本方法也是类似的。电商的参与者可以分为商户、买家和渠道，对这三类参与者，都需要分别建立总帐账户和明细账户。</p>
+<p><strong>内部账户和外部账户</strong></p>
+<p>　　当用户使用银行卡来支付时，电商支付系统需要和银行对接，从用户银行卡所代表的账户上扣除资金。对接了银行，第三方支付等机构的电商支付系统，它需要连接到用户在这些机构的账户来执行扣款或者充值操作，这些账户称为<strong>外部账户</strong>。对外部账户，支付系统只能记录账户在本系统的明细以及累计消费额，无法得知账户真正余额。不少电商在玩零钱的概念，也就是让用户充值到零钱，使用的时候就直接从零钱中扣除。这就需要零钱账户。这是电商系统中自己设立的账户，所以也叫<strong>内部账户</strong>，可以知道账户的全部消费明细和余额。当然，除了零钱账户，也可以有储值卡账户、信用账户等。那问题来了，什么时候需要建立账户，比如优惠券，需要账户吗？一次消费的储值卡和可以充值的储值卡，需要建立账户吗？这里先埋个雷。</p>
+<p><strong>收款账户和收单账户</strong></p>
+<p>　　当电商要对接银行时，往往都会被要求开设一个收款账户。用户通过这个银行来支付时，钱就被转到这个账户上。对第三方支付也是一样。收款账户是开设在银行或者第三方支付这边的，即渠道侧。一般来说，渠道每天都可以提供这个账户的交易流水供电商对账用。这样在电商这边，渠道就成为一个收单机构。所以在电商这边，建立这个收款账户对应的对账用的收单账号，用来记录通过这个渠道进行的各项交易流水。</p>
+<h2 id="4-2-三类账户"><a href="#4-2-三类账户" class="headerlink" title="4.2 三类账户"></a>4.2 三类账户</h2><p>　　在设计支付账户系统时，合规是第一要求，和账户相关的法规，最重要的是近期央行发布的三个文件。 从 2013 年 3 月起，国家相继制定一系列“互联网+”计划，推动了移动互联网、大数据等与现代制造业、服务业相结合，引导企业转型，促进经济健康发展。在此背景下，央行相继发布了三个文件：</p>
+<ul>
+<li>「<strong>中国人民银行关于改进个人银行账户服务加强账户管理的通知</strong>」，银发〔2015〕392 号，2015 年 12 月 25 日发文，正式启动账户分类管理工作。</li>
+<li>「<strong>中国人民银行关于落实个人银行账户分类管理制度的通知</strong>」，银发〔2016〕302 号, 2016 年 11 月 25 日发文，明确了同一个人在同一个银行只能有一个<code>I</code>类账户的要求。</li>
+<li>「<strong>中国人民银行关于加强支付结算管理防范电信网络新型违法犯罪有关事项的通知</strong>」，银发〔2016〕261 号， 2016 年 9 月 20 日发文，调整并细化了账户分类及使用要求。</li>
+</ul>
+<p>在这些文件中，央行明确对账户实施分类管理的要求。 对这三类账户区别，总结如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815202550621" alt="account"></p>
+<h2 id="4-3-生命周期"><a href="#4-3-生命周期" class="headerlink" title="4.3 生命周期"></a>4.3 生命周期</h2><p><img src="http://img.blog.csdn.net/20170815202655246" alt="life"></p>
+<ul>
+<li><strong>账户开立与绑卡</strong>：同一个人在同一银行只能开立一个<code>Ⅰ</code>类户，<code>I</code>类户的设立需要面对面审核，电子渠道开立的<code>Ⅱ</code>类户和<code>Ⅲ</code>类户需绑定银行账户进行验证，不得绑定支付机构账户验证，<code>Ⅱ</code>类户需向绑定账户验证<code>5</code>要素（<code>4</code>要素：姓名、身份证号、手机号、银行卡号，额外增加账户等级），<code>Ⅲ</code>类户需验证<code>4</code>要素，银联支持支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户跨行验证绑定账户信息。</li>
+<li><strong>资金互转</strong>：对非面对面开立的<code>Ⅱ</code>、<code>Ⅲ</code>类户，限制非绑定账户转入，允许<code>Ⅱ</code>、<code>Ⅲ</code>类户向绑定账户直接借记资金，银联支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户与绑定账户间通过借记和贷记业务实现灵活便捷的资金划付。</li>
+<li><strong>账户使用</strong>：<code>I</code>类账户、对面核实身份的<code>Ⅱ</code>类户可以发行实体银行卡，其他账户不能使用实体银行卡，<code>Ⅱ</code>、<code>Ⅲ</code>类户可以通过云闪付、二维码等支付工具来完成支付，银联支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户便捷生成基于安全芯片、主机卡模拟或二维码等技术的支付工具。</li>
+</ul>
+<h2 id="4-3-账户建模"><a href="#4-3-账户建模" class="headerlink" title="4.3 账户建模"></a>4.3 账户建模</h2><p>在支付系统中，账户的建模，主要是从如下几个方面来考虑：</p>
+<ul>
+<li><strong>交易的需求</strong>，比如检查账户是否被锁定、余额是否足够、是否有效等。</li>
+<li><strong>记账的需求</strong>，按照公司会计需求记录账户上的所有行为，包括支出、充值、转账等。</li>
+<li><strong>对账的需求</strong>，包括和支付渠道、商户、个人的对账需求，核对交易和账户余额是否正确。</li>
+<li><strong>风控的需求</strong>，如反洗钱、反欺诈等，都需要依赖于账户体系来提供核心数据。</li>
+<li><strong>信用的需求</strong>，对用户、资产、商户等主体进行信用评估时，也需要依赖账户体系来提供的核心数据。</li>
+</ul>
+<p>这五个需求，按照其设计的优先级，也是从支付、记账、对账、风控来进行。 支付系统根据其发展所处的阶段，逐步将新增需求纳入设计中。说了这么多，目的是为了对账户建模。账户模型是和公司业务密切相关的，公司不同规模，发展的不同阶段需要不同的模型。从交易模型中可以衍生出针对各个角色的账户流水，即明细模型，用于支持对账。根据业务需要，可以设置多种账户，如支付账户、预付卡账户、代扣账户、零钱账户、结算账户等。从类别上来说，这里的账户，一般指总账账户。一般来说电商系统中涉及的账户类型有：</p>
+<ul>
+<li><strong>虚拟币账户</strong>：用户和使用虚拟币的商户都需要建立虚拟币账户；</li>
+<li><strong>代扣账户</strong>： 用来支持订阅类型的定期代扣；</li>
+<li><strong>零钱账户</strong>：电商的内部账号，用户、商户、清算单位需要建立零钱账户。</li>
+<li><strong>第三方支付账户</strong>：用户在第三方支付机构建立的账户。</li>
+<li><strong>银行卡账户</strong>：用户的银行卡信息，每个卡对应一个账户。</li>
+<li><strong>结算账户</strong>：用来支持和第三方支付公司、银行进行结算用，第三方支付需要为每个商户号建立结算账户；银行需要为借记卡、贷记卡分别建立结算账户，一般在银行卡直连时使用。</li>
+<li><strong>代扣代缴账户</strong>：用来支持代扣税款业务。</li>
+</ul>
+<p>对这些账户，需要设置如下属性，基本属性，包括：</p>
+<ul>
+<li><strong>账户号或称为账户 ID</strong>，一般是系统自动生成。特别注意的是，要事先约定好账户 ID 的规则，比如头三位用来表示账户类型，后几位用来表示账户编号等，务必保证根据账号号能够快速确定账户类型，并且保证账户号是不重复的。</li>
+<li><strong>账户名称</strong>，一般是由用户自己设置的，显示用。</li>
+<li><strong>账户使用的货币类型</strong>，注意虽然一张银行卡可以支持多个币种，实际在内部，还是针对每个币种建立独立的子账户。涉及到多币种的账户，也可以采用类似的建模方案。</li>
+<li><strong>会计科目代码</strong>，一般是一级会计科目的代码。</li>
+</ul>
+<p>账户控制相关：</p>
+<ul>
+<li>是否允许充值；</li>
+<li>是否允许提现；</li>
+<li>是否允许透支；</li>
+<li>是否允许支付；</li>
+<li>是否允许转账进入；</li>
+<li>是否允许转账转出；</li>
+<li>是否有安全保障；</li>
+<li>是否激活；</li>
+<li>是否冻结。</li>
+</ul>
+<p>资金相关：</p>
+<ul>
+<li>当前账户余额，等于可用余额+冻结余额；</li>
+<li>当前账户可用余额；</li>
+<li>当前账户冻结的余额，冻结余额指在账户上暂不能使用的额度。在支付的时候，往往是先冻结，商品出库后，再实际执行扣款。</li>
+</ul>
+<p>银行卡、第三方支付信息：</p>
+<ul>
+<li>第三方实体的 ID；</li>
+<li>第三方账号，如银行卡号或者在第三方支付的<code>open_id</code>等；</li>
+<li>第三方的<code>app_id</code>；</li>
+<li>账号的失效日期，该账号什么时候失效。</li>
+</ul>
+<p>注意，有些第三方信息是不能保存的，如用户的账号密码、信用卡的 CV 号等。为了避免账户信息被爬库或者数据库信息意外泄露，一般还需要对敏感字段，如密码等，进行加密保存，甚至保存到另外的表中。更进一步，为了避免账户信息被意外修改，还可以增加一个校验字段，在写入数据时设置该字段，在读取数据时做校验，一旦发现数据有问题，则关闭该账号。</p>
+<hr>
+<h1 id="个人总结"><a href="#个人总结" class="headerlink" title="个人总结"></a>个人总结</h1><p>这三种类型的户里面，其实金融相关业务都是围绕着<strong>客户</strong>来进行展开，因此对于客户的建模及管理尤为重要，如客户资产管理、借贷信息管理、风控管理等等。</p>
+]]></content>
+      <categories>
+        <category>支付</category>
+      </categories>
+      <tags>
+        <tag>客户</tag>
+        <tag>账户</tag>
+        <tag>支付</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>设计模式介绍</title>
+    <url>/2020/09/05/Design-Parttern/</url>
+    <content><![CDATA[<blockquote>
+<p>前言：工作实践中常常会用到某些设计模式，但总的来说看到的是一个个点状。本文旨在对软件设计模式的概念、原则以及具体内容进行系统性总结，分别从是什么、为什么以及原则等几个维度进行出发，对软件设计模式进行全面的概括并结合相关实践案例，以对过去工作的一个总结。</p>
+</blockquote>
+<h1 id="设计模式概念"><a href="#设计模式概念" class="headerlink" title="设计模式概念"></a>设计模式概念</h1><p>首先简单介绍下设计模式的基本概念，分别从是设计模式是什么、为什么用以及设计模式中的六大原则来尽可能全面地进行描述。  </p>
+<h2 id="设计模式是什么"><a href="#设计模式是什么" class="headerlink" title="设计模式是什么"></a>设计模式是什么</h2><p>设计模式是一套被反复使用、多数人知晓的、经过分类编目的、代码设计经验的总结<sup>[1]</sup>。最初在上个世纪90年代由Erich Gamma、Richard Helm、Raplh Johnson和Jonhn Vlissides等四人总结提炼而出，著有<a href="https://book.douban.com/subject/1052241/" target="_blank" rel="noopener">《设计模式-可复用面向对象软件的基础》</a>一书。  </p>
+<h2 id="为什么要使用设计模式"><a href="#为什么要使用设计模式" class="headerlink" title="为什么要使用设计模式"></a>为什么要使用设计模式</h2><p>设计模式本质是在软件开发过程中， 针对可复用模式的一些经验总结。因此其主要目的为<strong>使人们简单方便地复用成功的设计和体系结构</strong>，避免设计损害了系统的复用性。另外，通过这种大家公认的模式，也能提升已有系统的维护有效性，比如设计模式可作为一种规范及沟通桥梁，新的系统开发者接手时也更容易理解现有系统的设计思路。<br>简而言之，作为已经被成功验证过的经验，设计模式不仅能帮助开发者<strong>设计出可复用的软件</strong>，还能作为一种<strong>规范及桥梁</strong>，协助新加入开发者更快更容易地理解现有系统。  </p>
+<a id="more"></a>
+<h2 id="设计模式六大法则"><a href="#设计模式六大法则" class="headerlink" title="设计模式六大法则"></a>设计模式六大法则</h2><p>设计模式是基于软件设计的几个原则而总结出来的。即先有指导原则，在这些原则的指导下，人们在实践过程中慢慢产生了一些实践经验。因此要想充分理解掌握软件设计模式，就必须先理解它的一些指导原则。设计模式主要是基于以下六项基本原则：  </p>
+<h3 id="单一职责原则"><a href="#单一职责原则" class="headerlink" title="单一职责原则"></a>单一职责原则</h3><blockquote>
+<p><strong>单一职责原则(Single Responsibility Principle, SRP)：一个类只负责一个功能领域中的相应职责，或者可以定义为：就一个类而言，应该只有一个引起它变化的原因。</strong>  </p>
+</blockquote>
+<p>这个概念最早是由 Robert C. Martin 提出，该原则告诉我们：一个类不能太“累”！在软件系统中，一个类（大到模块，小到方法）承担的职责越多，它被复用的可能性就越小，而且一个类承担的职责过多，就相当于将这些职责耦合在一起，当其中一个职责变化时，可能会影响其他职责的运作，因此要将这些职责进行分离，将不同的职责封装在不同的类中，即将不同的变化原因封装在不同的类中，如果多个职责总是同时发生改变则可将它们封装在同一类中。<br>单一职责原则是实现软件系统<strong>高内聚、低耦合</strong>的指导方针，它是最简单但又最难运用的原则，需要设计人员发现类的不同职责并将其分离，而发现类的多重职责需要设计人员具有较强的分析设计能力和相关实践经验。  </p>
+<h3 id="开闭原则"><a href="#开闭原则" class="headerlink" title="开闭原则"></a>开闭原则</h3><blockquote>
+<p><strong>开闭原则(Open-Closed Principle, OCP)：一个软件实体应当对扩展开放，对修改关闭。即软件实体应尽量在不修改原有代码的情况下进行扩展。</strong>  </p>
+</blockquote>
+<h3 id="里式替换原则"><a href="#里式替换原则" class="headerlink" title="里式替换原则"></a>里式替换原则</h3><blockquote>
+<p><strong>里氏代换原则(Liskov Substitution Principle, LSP)：所有引用基类（父类）的地方必须能透明地使用其子类的对象。</strong>  </p>
+</blockquote>
+<h3 id="依赖倒置原则"><a href="#依赖倒置原则" class="headerlink" title="依赖倒置原则"></a>依赖倒置原则</h3><blockquote>
+<p><strong>依赖倒转原则(Dependency Inversion  Principle, DIP)：抽象不应该依赖于细节，细节应当依赖于抽象。换言之，要针对接口编程，而不是针对实现编程。</strong>  </p>
+</blockquote>
+<h3 id="接口隔离原则"><a href="#接口隔离原则" class="headerlink" title="接口隔离原则"></a>接口隔离原则</h3><blockquote>
+<p><strong>接口隔离原则(Interface  Segregation Principle, ISP)：使用多个专门的接口，而不使用单一的总接口，即客户端不应该依赖那些它不需要的接口。</strong>  </p>
+</blockquote>
+<h3 id="迪米特法则"><a href="#迪米特法则" class="headerlink" title="迪米特法则"></a>迪米特法则</h3><blockquote>
+<p><strong>迪米特法则(Law of  Demeter, LoD)：一个软件实体应当尽可能少地与其他实体发生相互作用。</strong></p>
+</blockquote>
+<h1 id="23种设计模式介绍"><a href="#23种设计模式介绍" class="headerlink" title="23种设计模式介绍"></a>23种设计模式介绍</h1><h2 id="总览"><a href="#总览" class="headerlink" title="总览"></a>总览</h2><h2 id="常用设计模式"><a href="#常用设计模式" class="headerlink" title="常用设计模式"></a>常用设计模式</h2><h2 id="其他设计模式"><a href="#其他设计模式" class="headerlink" title="其他设计模式"></a>其他设计模式</h2><p>引用：  </p>
+<ol>
+<li><a href="https://baike.baidu.com/item/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/2117635?fromtitle=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F&fromid=1212549&fr=aladdin" target="_blank" rel="noopener">百度百科-软件设计模式</a>  </li>
+<li><a href="https://zhuanlan.zhihu.com/p/68498278" target="_blank" rel="noopener">闲聊设计模式的六大原则
+</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>架构/设计</category>
+        <category>设计模式</category>
+      </categories>
+      <tags>
+        <tag>设计模式</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>反应式编程简介</title>
+    <url>/2020/01/15/%E5%8F%8D%E5%BA%94%E5%BC%8F%E7%BC%96%E7%A8%8B%E7%AE%80%E4%BB%8B/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>架构/设计</category>
+        <category>反应式</category>
+      </categories>
+      <tags>
+        <tag>响应式编程</tag>
+        <tag>Reactive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>反应式宣言</title>
+    <url>/2020/01/15/%E5%8F%8D%E5%BA%94%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%AE%A3%E8%A8%80/</url>
+    <content><![CDATA[<blockquote>
+<p>版本 2.0，2014 年 9 月 16 日发布</p>
+</blockquote>
+<blockquote>
+<p>转自：<a href="https://www.reactivemanifesto.org/zh-CN" target="_blank" rel="noopener">反应式宣言</a></p>
+</blockquote>
+<p>在不同领域中深耕的组织都在不约而同地尝试发现相似的软件构建模式。 希望这些系统会更健壮、更具回弹性 、更灵活，也能更好地满足现代化的需求。</p>
+<a id="more"></a>
+
+<p>近年来，应用程序的需求已经发生了戏剧性的更改，模式变化也随之而来。仅在几年前， 一个大型应用程序通常拥有数十台服务器、 秒级的响应时间、 数小时的维护时间以及GB级的数据。 而今，应用程序被部署到了形态各异的载体上, 从移动设备到运行着数以千计的多核心处理器的云端集群。 用户期望着毫秒级的响应时间，以及服务100%正常运行（随时可用）。 而数据则以PB计量。 昨日的软件架构已经根本无法满足今天的需求。</p>
+<p>我们相信大家需要一套贯通整个系统的架构设计方案， 而设计中必需要关注的各个角度也已被理清： 我们需要系统具备以下特质：即时响应性（Responsive）、回弹性（Resilient）、弹性（Elastic）以及消息驱动（Message Driven）。 对于这样的系统，我们称之为反应式系统（Reactive System）。</p>
+<p>使用反应式方式构建的反应式系统会更加灵活、松耦合、可伸缩。 这使得它们的开发和调整更加容易。 它们对系统的失败 也更加的包容， 而当失败确实发生时， 它们的应对方案会是得体处理而非混乱无序。 反应式系统具有高度的即时响应性， 为用户提供了高效的互动反馈。</p>
+<h3 id="反应式系统的特质"><a href="#反应式系统的特质" class="headerlink" title="反应式系统的特质:"></a>反应式系统的特质:</h3><ul>
+<li><p>即时响应性: ：只要有可能， 系统就会及时地做出响应。 即时响应是可用性和实用性的基石， 而更加重要的是，即时响应意味着可以快速地检测到问题并且有效地对其进行处理。 即时响应的系统专注于提供快速而一致的响应时间， 确立可靠的反馈上限， 以提供一致的服务质量。 这种一致的行为转而将简化错误处理、 建立最终用户的信任并促使用户与系统作进一步的互动。</p>
+</li>
+<li><p>回弹性：系统在出现失败时依然保持即时响应性。 这不仅适用于高可用的、 任务关键型系统——任何不具备回弹性的系统都将会在发生失败之后丢失即时响应性。 回弹性是通过复制、 遏制、 隔离以及委托来实现的。 失败的扩散被遏制在了每个组件内部， 与其他组件相互隔离， 从而确保系统某部分的失败不会危及整个系统，并能独立恢复。 每个组件的恢复都被委托给了另一个（外部的）组件， 此外，在必要时可以通过复制来保证高可用性。 （因此）组件的客户端不再承担组件失败的处理。</p>
+</li>
+<li><p>弹性： 系统在不断变化的工作负载之下依然保持即时响应性。 反应式系统可以对输入（负载）的速率变化做出反应，比如通过增加或者减少被分配用于服务这些输入（负载）的资源。 这意味着设计上并没有争用点和中央瓶颈， 得以进行组件的分片或者复制， 并在它们之间分布输入（负载）。 通过提供相关的实时性能指标， 反应式系统能支持预测式以及反应式的伸缩算法。 这些系统可以在常规的硬件以及软件平台上实现成本高效的弹性。</p>
+</li>
+<li><p>消息驱动：反应式系统依赖异步的消息传递，从而确保了松耦合、隔离、位置透明的组件之间有着明确边界。 这一边界还提供了将失败作为消息委托出去的手段。 使用显式的消息传递，可以通过在系统中塑造并监视消息流队列， 并在必要时应用回压， 从而实现负载管理、 弹性以及流量控制。 使用位置透明的消息传递作为通信的手段， 使得跨集群或者在单个主机中使用相同的结构成分和语义来管理失败成为了可能。 非阻塞的通信使得接收者可以只在活动时才消耗资源， 从而减少系统开销。<br><img src="/images/reactive.png" alt=""></p>
+</li>
+</ul>
+<p>大型系统由多个较小型的系统所构成， 因此整体效用取决于它们的构成部分的反应式属性。 这意味着， 反应式系统应用着一些设计原则，使这些属性能在所有级别的规模上生效，而且可组合。世界上各类最大型的系统所依赖的架构都基于这些属性，而且每天都在服务于数十亿人的需求。现在，是时候在系统设计一开始就有意识地应用这些设计原则了， 而不是每次都去重新发现它们。</p>
+]]></content>
+      <categories>
+        <category>架构/设计</category>
+        <category>反应式</category>
+      </categories>
+      <tags>
+        <tag>响应式编程</tag>
+        <tag>Reactive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>2020：回顾与规划</title>
+    <url>/2020/01/01/2020%EF%BC%9A%E5%9B%9E%E9%A1%BE%E4%B8%8E%E8%A7%84%E5%88%92/</url>
+    <content><![CDATA[<h1 id="一、回顾过去"><a href="#一、回顾过去" class="headerlink" title="一、回顾过去"></a>一、回顾过去</h1><h1 id="二、未来规划"><a href="#二、未来规划" class="headerlink" title="二、未来规划"></a>二、未来规划</h1><p>2020关键词：习惯+复利</p>
+<p>1.习惯</p>
+<ul>
+<li>跑步</li>
+<li>早起早睡</li>
+<li>每日独立学习时间</li>
+<li>每月写一个博客</li>
+</ul>
+<p>2.复利</p>
+<p>3.认知</p>
+<ul>
+<li>结构化思维能力</li>
+<li>复刻现实能力</li>
+</ul>
+]]></content>
+      <categories>
+        <category>总结规划</category>
+        <category>年终</category>
+      </categories>
+      <tags>
+        <tag>总结</tag>
+        <tag>年终总结</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>【翻译】通过调试来理解Finalizer</title>
+    <url>/2019/12/30/java-Finalizer/</url>
+    <content><![CDATA[<p>本文介绍的是Java里一个内建的概念，Finalizer。你可能对它对数家珍，但也可能从未听闻过，这得看你有没有花时间完整地看过一遍java.lang.Object类了。在java.lang.Object里面就有一个finalize()的方法。这个方法的实现是空的，不过一旦实现了这个方法，就会触发JVM的内部行为，威力和危险并存。</p>
+<a id="more"></a>
+<p>如果JVM发现某个类实现了finalize()方法的话，那么见证奇迹的时刻到了。我们先来创建一个实现了这个非凡的finalize()方法的类，然后看下这种情况下JVM的处理会有什么不同。我们先从一个简单的示例程序开始：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.concurrent.atomic.AtomicInteger;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Finalizable</span> </span>&#123;</span><br><span class="line">      <span class="keyword">static</span> AtomicInteger aliveCount = <span class="keyword">new</span> AtomicInteger(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">      Finalizable() &#123;</span><br><span class="line">            aliveCount.incrementAndGet();</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="meta">@Override</span></span><br><span class="line">     <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">                  Finalizable.aliveCount.decrementAndGet();</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;; i++) &#123;</span><br><span class="line">                  Finalizable f = <span class="keyword">new</span> Finalizable();</span><br><span class="line">                  <span class="keyword">if</span> ((i % <span class="number">100_000</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">                        System.out.format(<span class="string">"After creating %d objects, %d are still alive.%n"</span>, <span class="keyword">new</span> Object[] &#123;i, Finalizable.aliveCount.get() &#125;);</span><br><span class="line">                    &#125;</span><br><span class="line">          &#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个程序使用了一个无限循环来创建对象。它同时还用了一个静态变量aliveCount来跟踪一共创建了多少个实例。每创建了一个新对象，计数器会加1，一旦GC完成后调用了finalize()方法，计数器会跟着减1。</p>
+<p>你觉得这小段代码的输出结果会是怎样的呢？由于新创建的对象很快就没人引用了，它们马上就可以被GC回收掉。因此你可能会认为这段程序可以不停的运行下去，：</p>
+<blockquote>
+<p>After creating 345,000,000 objects, 0 are still alive.<br>After creating 345,100,000 objects, 0 are still alive.<br>After creating 345,200,000 objects, 0 are still alive.<br>After creating 345,300,000 objects, 0 are still alive.</p>
+</blockquote>
+<p>显然结果并非如此。现实的结果完全不同，在我的Mac OS X的JDK 1.7.0_51上，程序大概在创建了120万个对象后就抛出java.lang.OutOfMemoryError: GC overhead limitt exceeded异常退出了。</p>
+<blockquote>
+<p>After creating 900,000 objects, 791,361 are still alive.<br>After creating 1,000,000 objects, 875,624 are still alive.<br>After creating 1,100,000 objects, 959,024 are still alive.<br>After creating 1,200,000 objects, 1,040,909 are still alive.<br>Exception in thread “main” java.lang.OutOfMemoryError: GC overhead limit exceeded<br>at java.lang.ref.Finalizer.register(Finalizer.java:90)<br>at java.lang.Object.(Object.java:37)<br>at eu.plumbr.demo.Finalizable.(Finalizable.java:8)<br>at eu.plumbr.demo.Finalizable.main(Finalizable.java:19)</p>
+</blockquote>
+<h2 id="垃圾回收的行为"><a href="#垃圾回收的行为" class="headerlink" title="垃圾回收的行为"></a>垃圾回收的行为</h2><p>想弄清楚到底发生了什么，你得看下这段程序在运行时的状况如何。我们来打开-XX:+PrintGCDetails选项再运行一次看看：</p>
+<blockquote>
+<p>[GC [PSYoungGen: 16896K-&gt;2544K(19456K)] 16896K-&gt;16832K(62976K), 0.0857640 secs] [Times: user=0.22 sys=0.02, real=0.09 secs]<br>[GC [PSYoungGen: 19440K-&gt;2560K(19456K)] 33728K-&gt;31392K(62976K), 0.0489700 secs] [Times: user=0.14 sys=0.01, real=0.05 secs]<br>[GC– [PSYoungGen: 19456K-&gt;19456K(19456K)] 48288K-&gt;62976K(62976K), 0.0601190 secs] [Times: user=0.16 sys=0.01, real=0.06 secs]<br>[Full GC [PSYoungGen: 16896K-&gt;14845K(19456K)] [ParOldGen: 43182K-&gt;43363K(43520K)] 60078K-&gt;58209K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.4954480 secs] [Times: user=1.76 sys=0.01, real=0.50 secs]<br>[Full GC [PSYoungGen: 16896K-&gt;16820K(19456K)] [ParOldGen: 43361K-&gt;43361K(43520K)] 60257K-&gt;60181K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.1379550 secs] [Times: user=0.47 sys=0.01, real=0.14 secs]<br>— cut for brevity—<br>[Full GC [PSYoungGen: 16896K-&gt;16893K(19456K)] [ParOldGen: 43351K-&gt;43351K(43520K)] 60247K-&gt;60244K(62976K) [PSPermGen: 2567K-&gt;2567K(21504K)], 0.1231240 secs] [Times: user=0.45 sys=0.00, real=0.13 secs]<br>[Full GCException in thread “main” java.lang.OutOfMemoryError: GC overhead limit exceeded<br>[PSYoungGen: 16896K-&gt;16866K(19456K)] [ParOldGen: 43351K-&gt;43351K(43520K)] 60247K-&gt;60218K(62976K) [PSPermGen: 2591K-&gt;2591K(21504K)], 0.1301790 secs] [Times: user=0.44 sys=0.00, real=0.13 secs]<br>at eu.plumbr.demo.Finalizable.main(Finalizable.java:19)</p>
+</blockquote>
+<p>从日志中可以看到，少数几次的Eden区的新生代GC过后，JVM开始采用更昂贵的Full GC来清理老生代和持久代的空间。为什么会这样？既然已经没有人引用这些对象了，为什么它们没有在新生代中被回收掉？代码这么写有什么问题吗？</p>
+<p>要弄清楚GC这个行为的原因，我们先来对代码做一个小的改动，将finalize()方法的实现先去掉。现在JVM发现这个类没有实现finalize()方法了，于是它切换回了”正常”的模式。再看一眼GC的日志，你只能看到一些廉价的新生代GC在不停的运行。</p>
+<p><img src="/images/java-memory-model.png" alt="Java内存"></p>
+<p>因为修改后的这段程序中，的确没有人引用到了新生代的这些刚创建的对象。因此Eden区很快就被清空掉了，整个程序可以一直的执行下去。</p>
+<p>另一方面，在早先的那个例子中情况则有些不同。这些对象并非没人引用 ，JVM会为每一个Finalizable对象创建一个看门狗（watchdog）。这是Finalizer类的一个实例。而所有的这些看门狗又会为Finalizer类所引用。由于存在这么一个引用链，因此整个的这些对象都是存活的。</p>
+<p>那现在Eden区已经满了，而所有对象又都存在引用，GC没辙了只能把它们全拷贝到Suvivor区。更糟糕的是，一旦连Survivor区也满了，只能存到老生代里面了。你应该还记得，Eden区使用的是一种”抛弃一切”的清理策略，而老生代的GC则完全不同，它采用的是一种开销更大的方式。</p>
+<h2 id="Finalizer队列"><a href="#Finalizer队列" class="headerlink" title="Finalizer队列"></a>Finalizer队列</h2><p>只有在GC完成后，JVM才会意识到除了Finalizer对象已经没有人引用到我们创建的这些实例了，因此它才会把指向这些对象的Finalizer对象标记成可处理的。GC内部会把这些Finalizer对象放到java.lang.ref.Finalizer.ReferenceQueue这个特殊的队列里面。</p>
+<p>完成了这些麻烦事之后，我们的应用程序才能继续往下走。这里有个线程你一定会很感兴趣——Finalizer守护线程。通过使用jstack进行thread dump可以看到这个线程的信息。</p>
+<blockquote>
+<p>My Precious:~ demo$ jps<br>1703 Jps<br>1702 Finalizable<br>My Precious:~ demo$ jstack 1702</p>
+</blockquote>
+<blockquote>
+<p>— cut for brevity —<br>“Finalizer” daemon prio=5 tid=0x00007fe33b029000 nid=0x3103 runnable [0x0000000111fd4000]<br>   java.lang.Thread.State: RUNNABLE<br>at java.lang.ref.Finalizer.invokeFinalizeMethod(Native Method)<br>at java.lang.ref.Finalizer.runFinalizer(Finalizer.java:101)<br>at java.lang.ref.Finalizer.access$100(Finalizer.java:32)<br>at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:190)<br>— cut for brevity —</p>
+</blockquote>
+<p>从上面可以看到有一个Finalizer守护线程正在运行。Finalizer线程是个单一职责的线程。这个线程会不停的循环等待java.lang.ref.Finalizer.ReferenceQueue中的新增对象。一旦Finalizer线程发现队列中出现了新的对象，它会弹出该对象，调用它的finalize()方法，将该引用从Finalizer类中移除，因此下次GC再执行的时候，这个Finalizer实例以及它引用的那个对象就可以回垃圾回收掉了。</p>
+<p>现在我们有两个线程都在不停地循环。我们的主线程在忙着创建新对象。这些对象都有各自的看门狗也就是Finalizer，而这个Finalizer对象会被添加到一个java.lang.ref.Finalizer.ReferenceQueue中。Finalizer线程会负责处理这个队列，它将所有的对象弹出，然后调用它们的finalize()方法。</p>
+<p>很多时候你可能磁不到内存溢出这种情况。finalize()方法的调用会比你创建新对象要早得多。因此大多数时候，Finalizer线程能够赶在下次GC带来更多的Finalizer对象前清空这个队列。但我们这个例子当中，显然不是这样。</p>
+<p>为什么会出现溢出？因为Finalizer线程和主线程相比它的优先级要低。这意味着分配给它的CPU时间更少，因此它的处理速度没法赶上新对象创建的速度。这就是问题的根源——对象创建的速度要比Finalizer线程调用finalize()结束它们的速度要快，这导致最后堆中所有可用的空间都被耗尽了。结果就是——我们亲爱的小伙伴java.lang.OutOfMemoryError会以不同的身份出现在你面前。</p>
+<p>如果你仍然不相信我的话，dump一下堆内存，看下它里面有什么。比如说，你可以使用-XX:+HeapDumpOnOutOfMemoryError参数启动我们这个小程序，在我的Eclipse中的MAT Dominator Tree中我看到的是下面这张图：</p>
+<p>看到了吧，我这个64M的堆全给Finalizer对象给占满了。</p>
+<p>结论<br>回顾一下，Finalizable对象的生命周期和普通对象的行为是完全不同的，列举如下：</p>
+<ul>
+<li>JVM创建Finalizable对象</li>
+<li>JVM创建 java.lang.ref.Finalizer实例，指向刚创建的对象。</li>
+<li>java.lang.ref.Finalizer类持有新创建的java.lang.ref.Finalizer的实例。这使得下一次新生代GC无法回收这些对象。</li>
+<li>新生代GC无法清空Eden区，因此会将这些对象移到Survivor区或者老生代。</li>
+<li>垃圾回收器发现这些对象实现了finalize()方法。因为会把它们添加到java.lang.ref.Finalizer.ReferenceQueue队列中。</li>
+<li>Finalizer线程会处理这个队列，将里面的对象逐个弹出，并调用它们的finalize()方法。<br>finalize()方法调用完后，Finalizer线程会将引用从Finalizer类中去掉，因此在下一轮GC中，这些对象就可以被回收了。</li>
+<li>Finalizer线程会和我们的主线程进行竞争，不过由于它的优先级较低，获取到的CPU时间较少，因此它永远也赶不上主线程的步伐。</li>
+<li>程序消耗了所有的可用资源，最后抛出OutOfMemoryError异常。</li>
+</ul>
+<p>这篇文章想告诉我们什么？下回如果你考虑使用finalize()方法，而不是使用常规的方式来清理对象的话，最好多想一下。你可能会为使用了finalize()方法写出的整洁的代码而沾沾自喜，但是不停增长的Finalizer队列也许会撑爆你的年老代，你需要重新再考虑一下你的方案。</p>
+<p>参考：</p>
+<ol>
+<li><a href="https://dzone.com/articles/debugging-understand-finalizer" target="_blank" rel="noopener">Debugging to Understand Finalizer
+</a></li>
+<li><a href="https://www.cnblogs.com/benwu/articles/5812903.html" target="_blank" rel="noopener">Java的Finalizer引发的内存溢出</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Java</category>
+        <category>语言基础</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>Finalizer</tag>
+      </tags>
+  </entry>
+</search>

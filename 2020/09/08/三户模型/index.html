@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://likai-hust.github.io').hostname,
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="转载声明：本文转自个人博客「凤凰牌老熊」，三户模型。  　　账户体系是支付系统的基础，它的设计直接影响整个系统的特性。这里探讨如何针对电子商务系统的账户体系设计。我们从一些基本概念开始入手，了解怎么建模。 1 三户模型　　三户模型最早是在增强型电信运营图（Enhanced Telecom Operations Map，eTOM）中提出，在电信行业中得到广泛使用。 三户指客户（Customer）、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解析「三户模型」及建立账户模型">
+<meta property="og:url" content="https://likai-hust.github.io/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="李凯的博客">
+<meta property="og:description" content="转载声明：本文转自个人博客「凤凰牌老熊」，三户模型。  　　账户体系是支付系统的基础，它的设计直接影响整个系统的特性。这里探讨如何针对电子商务系统的账户体系设计。我们从一些基本概念开始入手，了解怎么建模。 1 三户模型　　三户模型最早是在增强型电信运营图（Enhanced Telecom Operations Map，eTOM）中提出，在电信行业中得到广泛使用。 三户指客户（Customer）、">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815160637384">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815161913904">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815172552682">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815163116456">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815202550621">
+<meta property="og:image" content="http://img.blog.csdn.net/20170815202655246">
+<meta property="article:published_time" content="2020-09-08T11:07:59.000Z">
+<meta property="article:modified_time" content="2020-09-08T11:20:54.320Z">
+<meta property="article:author" content="李凯">
+<meta property="article:tag" content="客户">
+<meta property="article:tag" content="账户">
+<meta property="article:tag" content="支付">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.blog.csdn.net/20170815160637384">
+
+<link rel="canonical" href="https://likai-hust.github.io/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>解析「三户模型」及建立账户模型 | 李凯的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">李凯的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">长期有耐心</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://likai-hust.github.io/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="李凯">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李凯的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          解析「三户模型」及建立账户模型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-09-08 19:07:59 / 修改时间：19:20:54" itemprop="dateCreated datePublished" datetime="2020-09-08T19:07:59+08:00">2020-09-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%94%AF%E4%BB%98/" itemprop="url" rel="index">
+                    <span itemprop="name">支付</span>
+                  </a>
+                </span>
+            </span>
+
+          
+            <span id="/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/" class="post-meta-item leancloud_visitors" data-flag-title="解析「三户模型」及建立账户模型" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/#comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/09/08/%E4%B8%89%E6%88%B7%E6%A8%A1%E5%9E%8B/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p><strong>转载声明</strong>：本文转自个人博客「凤凰牌老熊」，<a href="http://blog.lixf.cn/essay/2017/06/12/account-1/" target="_blank" rel="noopener">三户模型</a>。</p>
+</blockquote>
+<p>　　账户体系是支付系统的基础，它的设计直接影响整个系统的特性。这里探讨如何针对电子商务系统的账户体系设计。我们从一些基本概念开始入手，了解怎么建模。</p>
+<h1 id="1-三户模型"><a href="#1-三户模型" class="headerlink" title="1 三户模型"></a>1 三户模型</h1><p>　　三户模型最早是在增强型电信运营图（Enhanced Telecom Operations Map，eTOM）中提出，在电信行业中得到广泛使用。 三户指客户（Customer）、用户（User）和账户(Account)。eTOM 引入是电信行业营销模型转向“以客户为中心”的理念而产生的成果。围绕客户建立用户和账户，这三个是相互关联的实体。近年来，金融行业也逐步接受和采用了三户模型。</p>
+<a id="more"></a>
+
+<ul>
+<li><strong>客户</strong>，指自然人或者法人。法人一般被称之为企业客户。如无特指，一般客户指个人客户。</li>
+<li><strong>用户</strong>，指通过注册的方式进入系统，使用系统提供的服务的实体，也称为登录账户，即用户在系统中登录凭证和个人信息。对应的，法人客户在系统中注册后，被称之为商户。</li>
+<li><strong>账户</strong>，这里特指支付账户，指用户在支付系统中用于交易的资金所有者权益的凭证。</li>
+</ul>
+<h1 id="2-客户"><a href="#2-客户" class="headerlink" title="2 客户"></a>2 客户</h1><h2 id="2-1-个人客户"><a href="#2-1-个人客户" class="headerlink" title="2.1 个人客户"></a>2.1 个人客户</h2><p>　　在银行体系中，一般是先有客户，再有用户。早期个人客户通过柜台人员操作注册到银行体系中，柜台人员在处理时，先添加客户信息，再注册账户信息。而在互联网系统中， 一般是用户先注册，先有用户，然后补充客户身份信息。也就是客户身份信息是在运行过程中逐步完善的。在银行柜台，操作人员通过面签或实名方式在系统中建立客户对象。这个对象的业务主键是证件号（如，身份证，假设目前 18 位证件都不重号），所有相同证件我们都视为同一个客户，不论是不是同一个系统中。同一个证件号，不论在工行还是中行，开出来的客户，其实都对应着现实中的同一个人。</p>
+<p>　　在一个平台体系中，通过系统给客户分配的唯一 ID 号客户 ID 来标识客户对像。这里面就有一个关键业务，既然相同证件都会识别成一个客户，那么当相同的证件号进入系统时，系统是如何处理的？当然是合成一个了，这个过程叫做客户归并，即：<strong>将相同证件的客户合成同一个客户号的过程，我们称为归并</strong>。归并是有风险的，所以需要一些鉴权手段来处理。在互联网应用中，一个系统中客户的生命周期如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815160637384" alt="lifecycle"></p>
+<p>注意在这个流程中没有销户的状态。这是为了支持历史业务的处理，客户一般不做销户。此外这个流程和支付账户的流程比较类似，这是为了方便在客户层面做账户控制。以司法协查为例，某个客户被协查以致账户冻结，需要冻结该客户下所有资金账户，这些账户都被止付。</p>
+<h2 id="2-2-企业客户"><a href="#2-2-企业客户" class="headerlink" title="2.2 企业客户"></a>2.2 企业客户</h2><p>　　企业客户相对个人客户来说比较复杂点，但三户模型仍然适用。同个人客户一样，企业客户在银行或支付平台开设资金账户，资金账户归属于此客户。企业客户是一个组织，其账户必然是组织授权内部人员去操作。但是这个操作人，同个人客户一样，只是系统的使用者，即用户。企业的资金比较大，并且有严格的业务流程，所以在系统使用上，一般是多个用户操作一个或多个资金账户。这种关系本身来说，也是一种授权关系，企业授权相应的用户来操作特定的资金账户，只不过为了管理方便，可以引入角色管理机制来实现。对于支付公司来说，企业客户通常都是发展商户过程中产生的。企业客户的识别同个人客户识别也是一样的，通过企业证件来统一识别。相同的企业证件号归并到同一个企业客户下面。建立企业客户的好处在于：</p>
+<ul>
+<li>有些企业本身只开通了企业服务业务，而不开通商户服务；</li>
+<li>一个企业可以开通多个商户，企业客户是这些多个商户的统计口径。</li>
+</ul>
+<h2 id="2-3-客户模型"><a href="#2-3-客户模型" class="headerlink" title="2.3 客户模型"></a>2.3 客户模型</h2><p>　　对客户的处理，在银行系统中是 CIF 系统或 ECIF 系统，而在互联网模式下，很多都是基于微服务的体系，如何划分微服务，这块要从客户系统对提供的业务主题来分。比如：对于个人客户，客户识别就是一个服务主题，对于一个客户有多种多样的识别方式，除了证件外，还包括生物识别，比如画像、指纹等。</p>
+<ul>
+<li>基本信息也是一个服务主题：包括客户的最基本的信息，姓名、年令、职业等;</li>
+<li>管理信息也是一个服务主题：比如这个客户的评级、是否集团员工等；</li>
+<li>客户标签也是一个服务主题：所谓标签，就是从不同的维度来给客户做个标记，一个客户有多个标签，当然，前提是要对标签做好规划；</li>
+<li>协议管理也是客户的一个服务主题：这里面有授权协议、委托协议等。</li>
+</ul>
+<p>当然，客户还有其它的一些主题，这个要看公司的业务了。</p>
+<p><img src="http://img.blog.csdn.net/20170815161913904" alt="cc"><br><img src="http://img.blog.csdn.net/20170815172552682" alt="ccc"></p>
+<h1 id="3-用户和商户"><a href="#3-用户和商户" class="headerlink" title="3 用户和商户"></a>3 用户和商户</h1><h2 id="3-1-用户"><a href="#3-1-用户" class="headerlink" title="3.1 用户"></a>3.1 用户</h2><p>　　用户是账户的操作实体，它是由客户来注册到系统中来的。虽然用户通过客户间接的拥有了资金账户，但这种关系并不是绝对的，比如，一个用户可以授权另一个用户进行账户的余额查询。所以，用户与资金账户之间我们可以抽象出一种授权关系，凡是授权用户，都可以操作资金账户，当然，这种授权包括客户自己的用户。用户的建立比较简单，一般自助注册后就可以生成用户实体了。用户的生命周期如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815163116456" alt="user"></p>
+<p>　　如果用户通过简易注册方式生成，这种情况下生成的是个预开户状态的用户，用户需要进一步完善一些信息才能变成正常用户，比如有些平台，在用户第一次登录时要求设置密保问题及答案。如果用户采用标准注册方式注册 的，可以直接成正常状态用户，正常做业务了。</p>
+<p>　　如果用户想要销户，收到销户申请后，不能直接销户，前面我们说过了，客户是通过用户来进行资金账户的管理与操作的，没有用户，资金账户就有可能没法玩了（假设客户只授权自己的一个而且只有一个用户来操作资金账户），特别是一些账户还存在债务。所以，此时有个确认过程，要求各业务系统确认此用户下的所有账户是否可以销户，如果没有问题，先销资金账户，当用户下的所有资金账户都销户完毕，再销用户，用户销户完成后，会释放出此用户占用的资源，如注册手机号。</p>
+<p>　　用户除了生命周期状态外，还有一个管理状态，比如冻结，从现实模型中来说，这个是不应该放在用户层面的而是放在资金账户层面上的，但互联网模式下，一个用户有多个资金账户，为了用户体验，把这些放在了用户层面上了，就如同支付密码放在用户层面上一样。</p>
+<h2 id="3-2-商户"><a href="#3-2-商户" class="headerlink" title="3.2 商户"></a>3.2 商户</h2><p>　　商户是企业客户的一个业务影子，或是看成资金账户分组的一个手段。商户是客户一个外围业务，如果把它看成用户平级层面也是可以的，即：此商户所有业务产生的资金进入到一个分类资金账户里。不论怎么说，一个企业不论开多少个商户，每个商户又开通多少个资金账户，都改变不了资金账户的归属关系，它是现实客户这个实体的。对客户的处理，在银行系统中是 CIF 系统或 ECIF 系统，而在互联网模式下，很多都是基于微服务的体系，如何划分微服务，这块要从客户系统对提供的业务主题来分。</p>
+<h1 id="4-账户"><a href="#4-账户" class="headerlink" title="4 账户"></a>4 账户</h1><h2 id="4-1-基本概念"><a href="#4-1-基本概念" class="headerlink" title="4.1 基本概念"></a>4.1 基本概念</h2><p>　　账户设置，一般是从交易开始的。交易的实现必须有账户的支持，账户是交易的基本构成元素。从支付系统的角度，交易中涉及到的资金流是资金从一个账户流向另一个账户。发起交易的一方，被称之为交易主体，他可以是个人，也可以是一个机构。资金从该主体所拥有的账户中流出。而接收交易的一方，被称为交易对手，他也可以是个人，或者机构。和第三方支付或者金融机构的交易不同，电商系统中，交易还会涉及到渠道。由于电商系统本身并无清结算的资质，所有资金从交易主体到交易对手的账户的流动，在大部分情况下，并没有经过电商系统，而是由电商系统调用支付渠道提供的接口，由它来完成真正的支付过程。当然，渠道也不是活雷锋，在这个过程中，渠道要收取费用。所以，在电商系统中，一次交易会涉及到三个账户： 交易主体账户、交易对手账户以及支付渠道账户。</p>
+<p><strong>支付账户和登录账户</strong></p>
+<p>　　账户体系设计首先要区分两个概念，支付账户和登录账户。这是两个不同业务领域的概念。<strong>支付账户</strong>指用户在支付系统中用于交易的资金所有者权益的凭证。<strong>登录账号</strong>指用户在系统中的登录的凭证和个人信息。一个用户可以有多个登录账户，一个登录账户可以有多个支付账户，比如零钱账户，储值卡账户等。 一般来说，支付账户不会在多个登录账户之间共用。如果没有特殊说明，下文中的账户，都默认指支付账户。</p>
+<p><strong>会计科目与账户</strong></p>
+<p>　　公司的会计需要对每一笔交易都要做详细的记录，即记账。公司每天都产生大量的交易行为，为了便于管理和统计，一个简单的方法是对交易进行分类，比如食品、带宽、办公用品等等。这个分类，按照公司的规模和业务复杂度，可以有一级、二级、三级或者更多级的结构，这被称之为<strong>会计科目</strong>。记账时，除了交易明细，还需要在每个级别上对交易额进行汇总。 一般来说，一级科目上汇总称为<strong>总帐科目</strong>，而详细记录称为<strong>明细科目</strong>。在电商系统中，由于涉及到的参与方较多，记账也相对复杂，但基本方法也是类似的。电商的参与者可以分为商户、买家和渠道，对这三类参与者，都需要分别建立总帐账户和明细账户。</p>
+<p><strong>内部账户和外部账户</strong></p>
+<p>　　当用户使用银行卡来支付时，电商支付系统需要和银行对接，从用户银行卡所代表的账户上扣除资金。对接了银行，第三方支付等机构的电商支付系统，它需要连接到用户在这些机构的账户来执行扣款或者充值操作，这些账户称为<strong>外部账户</strong>。对外部账户，支付系统只能记录账户在本系统的明细以及累计消费额，无法得知账户真正余额。不少电商在玩零钱的概念，也就是让用户充值到零钱，使用的时候就直接从零钱中扣除。这就需要零钱账户。这是电商系统中自己设立的账户，所以也叫<strong>内部账户</strong>，可以知道账户的全部消费明细和余额。当然，除了零钱账户，也可以有储值卡账户、信用账户等。那问题来了，什么时候需要建立账户，比如优惠券，需要账户吗？一次消费的储值卡和可以充值的储值卡，需要建立账户吗？这里先埋个雷。</p>
+<p><strong>收款账户和收单账户</strong></p>
+<p>　　当电商要对接银行时，往往都会被要求开设一个收款账户。用户通过这个银行来支付时，钱就被转到这个账户上。对第三方支付也是一样。收款账户是开设在银行或者第三方支付这边的，即渠道侧。一般来说，渠道每天都可以提供这个账户的交易流水供电商对账用。这样在电商这边，渠道就成为一个收单机构。所以在电商这边，建立这个收款账户对应的对账用的收单账号，用来记录通过这个渠道进行的各项交易流水。</p>
+<h2 id="4-2-三类账户"><a href="#4-2-三类账户" class="headerlink" title="4.2 三类账户"></a>4.2 三类账户</h2><p>　　在设计支付账户系统时，合规是第一要求，和账户相关的法规，最重要的是近期央行发布的三个文件。 从 2013 年 3 月起，国家相继制定一系列“互联网+”计划，推动了移动互联网、大数据等与现代制造业、服务业相结合，引导企业转型，促进经济健康发展。在此背景下，央行相继发布了三个文件：</p>
+<ul>
+<li>「<strong>中国人民银行关于改进个人银行账户服务加强账户管理的通知</strong>」，银发〔2015〕392 号，2015 年 12 月 25 日发文，正式启动账户分类管理工作。</li>
+<li>「<strong>中国人民银行关于落实个人银行账户分类管理制度的通知</strong>」，银发〔2016〕302 号, 2016 年 11 月 25 日发文，明确了同一个人在同一个银行只能有一个<code>I</code>类账户的要求。</li>
+<li>「<strong>中国人民银行关于加强支付结算管理防范电信网络新型违法犯罪有关事项的通知</strong>」，银发〔2016〕261 号， 2016 年 9 月 20 日发文，调整并细化了账户分类及使用要求。</li>
+</ul>
+<p>在这些文件中，央行明确对账户实施分类管理的要求。 对这三类账户区别，总结如下：</p>
+<p><img src="http://img.blog.csdn.net/20170815202550621" alt="account"></p>
+<h2 id="4-3-生命周期"><a href="#4-3-生命周期" class="headerlink" title="4.3 生命周期"></a>4.3 生命周期</h2><p><img src="http://img.blog.csdn.net/20170815202655246" alt="life"></p>
+<ul>
+<li><strong>账户开立与绑卡</strong>：同一个人在同一银行只能开立一个<code>Ⅰ</code>类户，<code>I</code>类户的设立需要面对面审核，电子渠道开立的<code>Ⅱ</code>类户和<code>Ⅲ</code>类户需绑定银行账户进行验证，不得绑定支付机构账户验证，<code>Ⅱ</code>类户需向绑定账户验证<code>5</code>要素（<code>4</code>要素：姓名、身份证号、手机号、银行卡号，额外增加账户等级），<code>Ⅲ</code>类户需验证<code>4</code>要素，银联支持支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户跨行验证绑定账户信息。</li>
+<li><strong>资金互转</strong>：对非面对面开立的<code>Ⅱ</code>、<code>Ⅲ</code>类户，限制非绑定账户转入，允许<code>Ⅱ</code>、<code>Ⅲ</code>类户向绑定账户直接借记资金，银联支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户与绑定账户间通过借记和贷记业务实现灵活便捷的资金划付。</li>
+<li><strong>账户使用</strong>：<code>I</code>类账户、对面核实身份的<code>Ⅱ</code>类户可以发行实体银行卡，其他账户不能使用实体银行卡，<code>Ⅱ</code>、<code>Ⅲ</code>类户可以通过云闪付、二维码等支付工具来完成支付，银联支持<code>Ⅱ</code>、<code>Ⅲ</code>类账户便捷生成基于安全芯片、主机卡模拟或二维码等技术的支付工具。</li>
+</ul>
+<h2 id="4-3-账户建模"><a href="#4-3-账户建模" class="headerlink" title="4.3 账户建模"></a>4.3 账户建模</h2><p>在支付系统中，账户的建模，主要是从如下几个方面来考虑：</p>
+<ul>
+<li><strong>交易的需求</strong>，比如检查账户是否被锁定、余额是否足够、是否有效等。</li>
+<li><strong>记账的需求</strong>，按照公司会计需求记录账户上的所有行为，包括支出、充值、转账等。</li>
+<li><strong>对账的需求</strong>，包括和支付渠道、商户、个人的对账需求，核对交易和账户余额是否正确。</li>
+<li><strong>风控的需求</strong>，如反洗钱、反欺诈等，都需要依赖于账户体系来提供核心数据。</li>
+<li><strong>信用的需求</strong>，对用户、资产、商户等主体进行信用评估时，也需要依赖账户体系来提供的核心数据。</li>
+</ul>
+<p>这五个需求，按照其设计的优先级，也是从支付、记账、对账、风控来进行。 支付系统根据其发展所处的阶段，逐步将新增需求纳入设计中。说了这么多，目的是为了对账户建模。账户模型是和公司业务密切相关的，公司不同规模，发展的不同阶段需要不同的模型。从交易模型中可以衍生出针对各个角色的账户流水，即明细模型，用于支持对账。根据业务需要，可以设置多种账户，如支付账户、预付卡账户、代扣账户、零钱账户、结算账户等。从类别上来说，这里的账户，一般指总账账户。一般来说电商系统中涉及的账户类型有：</p>
+<ul>
+<li><strong>虚拟币账户</strong>：用户和使用虚拟币的商户都需要建立虚拟币账户；</li>
+<li><strong>代扣账户</strong>： 用来支持订阅类型的定期代扣；</li>
+<li><strong>零钱账户</strong>：电商的内部账号，用户、商户、清算单位需要建立零钱账户。</li>
+<li><strong>第三方支付账户</strong>：用户在第三方支付机构建立的账户。</li>
+<li><strong>银行卡账户</strong>：用户的银行卡信息，每个卡对应一个账户。</li>
+<li><strong>结算账户</strong>：用来支持和第三方支付公司、银行进行结算用，第三方支付需要为每个商户号建立结算账户；银行需要为借记卡、贷记卡分别建立结算账户，一般在银行卡直连时使用。</li>
+<li><strong>代扣代缴账户</strong>：用来支持代扣税款业务。</li>
+</ul>
+<p>对这些账户，需要设置如下属性，基本属性，包括：</p>
+<ul>
+<li><strong>账户号或称为账户 ID</strong>，一般是系统自动生成。特别注意的是，要事先约定好账户 ID 的规则，比如头三位用来表示账户类型，后几位用来表示账户编号等，务必保证根据账号号能够快速确定账户类型，并且保证账户号是不重复的。</li>
+<li><strong>账户名称</strong>，一般是由用户自己设置的，显示用。</li>
+<li><strong>账户使用的货币类型</strong>，注意虽然一张银行卡可以支持多个币种，实际在内部，还是针对每个币种建立独立的子账户。涉及到多币种的账户，也可以采用类似的建模方案。</li>
+<li><strong>会计科目代码</strong>，一般是一级会计科目的代码。</li>
+</ul>
+<p>账户控制相关：</p>
+<ul>
+<li>是否允许充值；</li>
+<li>是否允许提现；</li>
+<li>是否允许透支；</li>
+<li>是否允许支付；</li>
+<li>是否允许转账进入；</li>
+<li>是否允许转账转出；</li>
+<li>是否有安全保障；</li>
+<li>是否激活；</li>
+<li>是否冻结。</li>
+</ul>
+<p>资金相关：</p>
+<ul>
+<li>当前账户余额，等于可用余额+冻结余额；</li>
+<li>当前账户可用余额；</li>
+<li>当前账户冻结的余额，冻结余额指在账户上暂不能使用的额度。在支付的时候，往往是先冻结，商品出库后，再实际执行扣款。</li>
+</ul>
+<p>银行卡、第三方支付信息：</p>
+<ul>
+<li>第三方实体的 ID；</li>
+<li>第三方账号，如银行卡号或者在第三方支付的<code>open_id</code>等；</li>
+<li>第三方的<code>app_id</code>；</li>
+<li>账号的失效日期，该账号什么时候失效。</li>
+</ul>
+<p>注意，有些第三方信息是不能保存的，如用户的账号密码、信用卡的 CV 号等。为了避免账户信息被爬库或者数据库信息意外泄露，一般还需要对敏感字段，如密码等，进行加密保存，甚至保存到另外的表中。更进一步，为了避免账户信息被意外修改，还可以增加一个校验字段，在写入数据时设置该字段，在读取数据时做校验，一旦发现数据有问题，则关闭该账号。</p>
+<hr>
+<h1 id="个人总结"><a href="#个人总结" class="headerlink" title="个人总结"></a>个人总结</h1><p>这三种类型的户里面，其实金融相关业务都是围绕着<strong>客户</strong>来进行展开，因此对于客户的建模及管理尤为重要，如客户资产管理、借贷信息管理、风控管理等等。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AE%A2%E6%88%B7/" rel="tag"># 客户</a>
+              <a href="/tags/%E8%B4%A6%E6%88%B7/" rel="tag"># 账户</a>
+              <a href="/tags/%E6%94%AF%E4%BB%98/" rel="tag"># 支付</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/05/Design-Parttern/" rel="prev" title="设计模式介绍">
+      <i class="fa fa-chevron-left"></i> 设计模式介绍
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/16/checklist/" rel="next" title="分享小组的一份codereview checklist">
+      分享小组的一份codereview checklist <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-三户模型"><span class="nav-number">1.</span> <span class="nav-text">1 三户模型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-客户"><span class="nav-number">2.</span> <span class="nav-text">2 客户</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-个人客户"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 个人客户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-企业客户"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 企业客户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-客户模型"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 客户模型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-用户和商户"><span class="nav-number">3.</span> <span class="nav-text">3 用户和商户</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-用户"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 用户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-商户"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 商户</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-账户"><span class="nav-number">4.</span> <span class="nav-text">4 账户</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-基本概念"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 基本概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-三类账户"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 三类账户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-生命周期"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-账户建模"><span class="nav-number">4.4.</span> <span class="nav-text">4.3 账户建模</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#个人总结"><span class="nav-number">5.</span> <span class="nav-text">个人总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李凯"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">李凯</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/likai-hust" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;likai-hust" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/leekainpu" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;leekainpu" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leekainpu@outlook.com" title="E-Mail → mailto:leekainpu@outlook.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李凯</span>
+</div>
+  <div class="theme-info">主题 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el: '#valine-comments',
+      verify: false,
+      notify: false,
+      appId: 'pqxDinpppYfNGtOALGzNl6VO-gzGzoHsz',
+      appKey: 'jUQL56tfoxsyIOWGCGPzAzSQ',
+      placeholder: "Just go go",
+      avatar: 'mm',
+      meta: guest,
+      pageSize: '10' || 10,
+      visitor: true,
+      lang: 'zh-cn' || 'zh-cn',
+      path: location.pathname,
+      recordIP: false,
+      serverURLs: ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
